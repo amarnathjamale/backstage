@@ -450,6 +450,102 @@ describe('KubernetesFetcher', () => {
         ],
       });
     });
+    it('should fetch cluster-scoped custom resources without namespace in path', async () => {
+      worker.use(
+        rest.get('http://localhost:9999/api/v1/pods', (req, res, ctx) =>
+          res(
+            checkToken(req, ctx, 'token'),
+            withLabels(req, ctx, {
+              kind: 'PodList',
+              items: [{ metadata: { name: 'pod-name' } }],
+            }),
+          ),
+        ),
+        rest.get('http://localhost:9999/api/v1/services', (req, res, ctx) =>
+          res(
+            checkToken(req, ctx, 'token'),
+            withLabels(req, ctx, {
+              kind: 'ServiceList',
+              items: [{ metadata: { name: 'service-name' } }],
+            }),
+          ),
+        ),
+        // Cluster-scoped resource - note no /namespaces/{ns}/ in the path
+        rest.get(
+          'http://localhost:9999/apis/platform.example.io/v1alpha1/clusterwidgets',
+          (req, res, ctx) =>
+            res(
+              checkToken(req, ctx, 'token'),
+              withLabels(req, ctx, {
+                kind: 'ClusterWidgetList',
+                items: [{ metadata: { name: 'my-cluster-widget' } }],
+              }),
+            ),
+        ),
+      );
+
+      const result = await sut.fetchObjectsForService({
+        serviceId: 'some-service',
+        clusterDetails: {
+          name: 'cluster1',
+          url: 'http://localhost:9999',
+          authMetadata: {},
+        },
+        credential: { type: 'bearer token', token: 'token' },
+        objectTypesToFetch: OBJECTS_TO_FETCH,
+        labelSelector: '',
+        namespace: 'default', // Even with namespace set, cluster-scoped should NOT use it
+        customResources: [
+          {
+            objectType: 'customresources',
+            group: 'platform.example.io',
+            apiVersion: 'v1alpha1',
+            plural: 'clusterwidgets',
+            namespaced: false, // Cluster-scoped resource
+          },
+        ],
+      });
+
+      expect(result).toStrictEqual({
+        errors: [],
+        responses: [
+          {
+            type: 'pods',
+            resources: [
+              {
+                metadata: {
+                  name: 'pod-name',
+                  labels: {},
+                },
+              },
+            ],
+          },
+          {
+            type: 'services',
+            resources: [
+              {
+                metadata: {
+                  name: 'service-name',
+                  labels: {},
+                },
+              },
+            ],
+          },
+          {
+            type: 'customresources',
+            resources: [
+              {
+                kind: 'ClusterWidget',
+                metadata: {
+                  name: 'my-cluster-widget',
+                  labels: {},
+                },
+              },
+            ],
+          },
+        ],
+      });
+    });
     // they're in testErrorResponse
     // eslint-disable-next-line jest/expect-expect
     it('should return pods, bad request error', async () => {

@@ -66,6 +66,7 @@ export interface Config {
               group: string;
               apiVersion: string;
               plural: string;
+              namespaced?: boolean;
             }>;
           }>;
         }
@@ -96,6 +97,7 @@ export interface Config {
       group: string;
       apiVersion: string;
       plural: string;
+      namespaced?: boolean;
     }>;
 
     /**

@@ -297,6 +297,8 @@ export interface ObjectToFetch {
   // (undocumented)
   group: string;
   // (undocumented)
+  namespaced?: boolean;
+  // (undocumented)
   objectType: KubernetesObjectTypes;
   // (undocumented)
   plural: string;

@@ -169,6 +169,8 @@ export interface CustomResourceMatcher {
   // (undocumented)
   group: string;
   // (undocumented)
+  namespaced?: boolean;
+  // (undocumented)
   plural: string;
 }
 

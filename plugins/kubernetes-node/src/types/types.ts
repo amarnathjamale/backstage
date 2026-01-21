@@ -200,6 +200,7 @@ export interface ObjectToFetch {
   group: string;
   apiVersion: string;
   plural: string;
+  namespaced?: boolean;
 }
 
 /**
